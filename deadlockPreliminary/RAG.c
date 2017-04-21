@@ -3,9 +3,20 @@
 * Implemented using matrix representation of the graph
 */
 //Using a matrix so lookups/adds are O(1)
-int matrix[NLOCK+NPROC][NLOCK+NPROC];
-//int *matrix;
+node *matrix; //
 
+
+void init(){
+	int i, j;
+	for(i=0; i<SIZE; i++){
+		//malloc the columns
+		matrix = (node*)malloc(sizeof(node));
+		for(j=0;j<SIZE; j++){
+			//Malloc the rows
+			matrix[i] = (node*)malloc(sizeof(node));
+		}
+	}
+}
 /*
  * Adds a request edge from pid to lockid
  * @param pid
@@ -13,7 +24,11 @@ int matrix[NLOCK+NPROC][NLOCK+NPROC];
  */
 void rag_request(int pid, int lockid){
 	int cell = translateIndex(pid);
-	matrix[cell][lockid] = 1;
+	matrix[cell][lockid]->val = 1;
+	matrix[cell][lockid]->req = "R";
+	matrix[cell][lockid]->x = cell;
+	matrix[cell][lockid]->y = lockid;
+
 }
 
 
@@ -41,6 +56,18 @@ void rag_print(){
 
 }
 
+//Clear up memory
+void freeMatrix(){
+	int i, j;
+	for(i=0; i<SIZE; i++){
+		//malloc the columns
+		for(j=0;j<SIZE; j++){
+			//Malloc the rows
+			free(matrix[i][j]);
+		}
+	}
+}
+
 /**
  * Translate only for a thread node
  *
@@ -51,46 +78,50 @@ int translateIndex(int v){
 	return v + 10;
 
 }
-/*
- * DFS with deadlock detection
- *
- */
+
+
 void deadlock_detect(void){
-	//Stack for DFS
-	sNode **st = (sNode*)malloc(sizeof(sNode)); //Just size for 1
-	push(st, )
-	int i;
-	//Initialize visited to 0
+	int i, j;
+	//Initialize all to be unvisited
 	for(i=0; i<SIZE; i++){
-		visited[i] = 0;
+		for(j=0; j<SIZE; j++){
+			matrix[i][j]->color = WHITE;
+		}
 	}
 
-	visited[0] = 1; //Set first to visited
-	for(i=0; i< SIZE; i++){
-		if(!visited[i])
-	}
-}
-
-int deadlock_helper(node *v){
-	int *visited = (int*)malloc(sizeof(int)*SIZE);
-
-}
-
-/*
-void DepthFirstSearch(int start){
-		Stack<Integer> st = new Stack<Integer>();
-		boolean[] visited = new boolean[V];
-		st.push(start);
-		visited[start] = true;
-		while(!st.isEmpty()){
-			int temp = st.pop();
-			System.out.print(temp + " ");
-			for(int vertex : adj[temp]){
-				if(!visited[vertex]){
-					st.push(vertex);
-					visited[vertex] =true;
+	for(i=0; i<SIZE; i++){
+		for(j=0; j<SIZE; j++){
+			if(matrix[i][j] == WHITE){
+				if(visit(matrix[i][j]) == 0){
+					//True?
 				}
 			}
 		}
 	}
-*/
+	//False?
+
+}
+
+
+int deadlock_helper(node *v){
+	int i, j;
+	v->color = GREY;
+	//Iterate over 
+	for(i=0; i<SIZE; i++){
+		//Don't worry about non existant edges
+		if(matrix[i][v->y] != 1){
+			continue;
+		}else if(matrix[i][v->y]->color == GREY){
+			//Cycle occured
+			printf("DEADLOCK with vertex[%d][%d]\n", i, v->y);
+			return 0; //TRUE
+		}else if(matrix[i][v->y]->color == WHITE){
+			if(deadlock_helper(matrix[i][v->y]) == 0){
+				return 0; //TRUE
+			}
+		}
+	}
+	v->color = BLACK;
+	return 1; //FALSE
+
+}
