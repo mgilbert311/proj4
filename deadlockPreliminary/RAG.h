@@ -24,5 +24,6 @@ void rag_alloc(int pid, int lockid);
 void rag_dealloc(int pid, int lockid);
 void rag_print();
 int translateIndex(int v);
-void deadlock_detect(void);
+//void deadlock_detect(void);
+void deadlock_detect(int index);
 int deadlock_helper(node *v);
