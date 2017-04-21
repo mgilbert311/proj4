@@ -1,12 +1,23 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include "RAG.h"
 /**
 * Single nstance resource allocation graph (RAG)
 * Implemented using matrix representation of the graph
 */
 //Using a matrix so lookups/adds are O(1)
  //
-extern *matrix;
+//extern **matrix;
+node matrix[SIZE][SIZE];
 
+/*
 void init(){
+	
+	**matrix = malloc(SIZE * sizeof *matrix + (SIZE * (SIZE * sizeof **array)));
+	//int * const data = array + nrows;
+	for(i = 0; i < SIZE; i++)
+  		matrix[i] = data + i * ncolumns;
+
 	int i, j;
 	for(i=0; i<SIZE; i++){
 		//malloc the columns
@@ -17,39 +28,53 @@ void init(){
 		}
 	}
 }
+*/
 /*
  * Adds a request edge from pid to lockid
  * @param pid
  * @param lockid
  */
 void rag_request(int pid, int lockid){
+	    printf("In rag request\n");
+
+	//Find the correct cell and initialize
 	int cell = translateIndex(pid);
-	matrix[cell][lockid]->val = 1;
-	matrix[cell][lockid]->req = "R";
-	matrix[cell][lockid]->x = cell;
-	matrix[cell][lockid]->y = lockid;
+	matrix[cell][lockid].val = 1;
+	matrix[cell][lockid].req = "R";
+	matrix[cell][lockid].x = cell;
+	matrix[cell][lockid].y = lockid;
 
 }
 
 
 void rag_alloc(int pid, int lockid){
+	   printf("in alloc\n");
+
+	//find the correct cell and update the matrix
 	int cell = translateIndex(pid);
-	matrix[lockid][cell] = 1;
-	matrix[cell][lockid] = 0;
+	matrix[lockid][cell].val =1;
+	matrix[cell][lockid].val = 0;
 }
+
 
 
 void rag_dealloc(int pid, int lockid){
+	   printf("in rag_dealloc\n");
+
+	//Find the correct cell and then set its value to 0
 	int cell = translateIndex(pid);
-	matrix[lockid][cell] = 0;
+	matrix[lockid][cell].val = 0;
 }
 
 
+//Print the matrix
 void rag_print(){
+	    printf("in print\n");
+
 	int i, j;
 	for(i=0; i< SIZE; i++){
 		for(j=0; j<SIZE; j++){
-			printf("%d", matrix[i][j]);
+			printf("%d", matrix[i][j].val);
 		}
 		printf("\n"); //New line after each row
 	}
@@ -57,6 +82,7 @@ void rag_print(){
 }
 
 //Clear up memory
+/*
 void freeMatrix(){
 	int i, j;
 	for(i=0; i<SIZE; i++){
@@ -67,6 +93,7 @@ void freeMatrix(){
 		}
 	}
 }
+*/
 
 /**
  * Translate only for a thread node
@@ -81,19 +108,23 @@ int translateIndex(int v){
 
 
 void deadlock_detect(void){
+	    printf("In detect\n");
+
 	int i, j;
 	//Initialize all to be unvisited
 	for(i=0; i<SIZE; i++){
 		for(j=0; j<SIZE; j++){
-			matrix[i][j]->color = WHITE;
+			matrix[i][j].color = WHITE;
 		}
 	}
 
 	for(i=0; i<SIZE; i++){
 		for(j=0; j<SIZE; j++){
-			if(matrix[i][j] == WHITE){
-				if(visit(matrix[i][j]) == 0){
+			if(matrix[i][j].color == WHITE){
+				if(deadlock_helper(&matrix[i][j]) == 0){
 					//True?
+					printf("DEADLOCK with vertex[%d][%d]\n", i, j);
+
 				}
 			}
 		}
@@ -104,19 +135,22 @@ void deadlock_detect(void){
 
 
 int deadlock_helper(node *v){
-	int i, j;
+	   //printf("In helper\n");
+
+	int i;
 	v->color = GREY;
 	//Iterate over 
 	for(i=0; i<SIZE; i++){
 		//Don't worry about non existant edges
-		if(matrix[i][v->y] != 1){
+		if(matrix[i][v->y].val != 1){
 			continue;
-		}else if(matrix[i][v->y]->color == GREY){
+		}else if(matrix[i][v->y].color == GREY){
 			//Cycle occured
-			printf("DEADLOCK with vertex[%d][%d]\n", i, v->y);
+			//printf("DEADLOCK with vertex[%d][%d]\n", i, v->y);
+
 			return 0; //TRUE
-		}else if(matrix[i][v->y]->color == WHITE){
-			if(deadlock_helper(matrix[i][v->y]) == 0){
+		}else if(matrix[i][v->y].color == WHITE){
+			if(deadlock_helper(&matrix[i][v->y]) == 0){
 				return 0; //TRUE
 			}
 		}

@@ -15,7 +15,7 @@ typedef struct node{
 	int nodeType; //0-> lock, 1->thread (might not need)
 	int x;		//X coordinate
 	int y;		//Y coordinate
-	char req[2];	//Which request value it is
+	char *req;	//Which request value it is
 	//node *next; //Each list is a linked list
 	//node *prev; //Needed for removing
 	//int loc; //The cell for visiting
@@ -27,6 +27,5 @@ void rag_alloc(int pid, int lockid);
 void rag_dealloc(int pid, int lockid);
 void rag_print();
 int translateIndex(int v);
-//void deadlock_detect(void);
 void deadlock_detect(void);
 int deadlock_helper(node *v);
