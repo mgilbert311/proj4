@@ -3,8 +3,8 @@
 * Implemented using matrix representation of the graph
 */
 //Using a matrix so lookups/adds are O(1)
-node *matrix; //
-
+ //
+extern *matrix;
 
 void init(){
 	int i, j;
