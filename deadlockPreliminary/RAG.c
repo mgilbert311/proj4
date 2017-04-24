@@ -128,7 +128,9 @@ void deadlock_detect(void){
 //As soon as you see a duplicate node, you are done and can print out
 	for(i=0; i<SIZE; i++){
 		for(j=0; j<SIZE; j++){
-			if(matrix[i][j].color == WHITE){ //If unvisited
+			if(matrix[i][j].val == 0){
+				continue; //optimization so it doesn't visit unnecessary places
+			}else if(matrix[i][j].color == WHITE){ //If unvisited
 				if(deadlock_helper(&matrix[i][j]) == 0){
 					//True?
 					//printf("DEADLOCK with vertex[%d][%d]\n", i, j);
@@ -155,20 +157,20 @@ int deadlock_helper(node *v){
 	int j;
 	v->color = GREY;
 	//Iterate over 
-	
 	//for(i=v->x; i<SIZE; i++){
 		for(j=0; j<SIZE; j++){
 		//Don't worry about non existant edges
-		if(matrix[v->x][j].val != 1){
+			//And just check by row
+		if(matrix[j][v->y].val != 1){
 			continue;
-		}else if(matrix[v->x][j].color == GREY){
+		}else if(matrix[j][v->y].color == GREY){
 			//Cycle occured
 			//printf("DEADLOCK with vertex[%d][%d]\n", i, v->y);
 			return 0; //TRUE
-		}else if(matrix[v->x][j].color == WHITE){
-			matrix[v->x][j].parent[v->x] = *v; 
+		}else if(matrix[j][v->y].color == WHITE){
+			matrix[j][v->x].parent[j] = *v; 
 
-			if(deadlock_helper(&matrix[v->x][j]) == 0){
+			if(deadlock_helper(&matrix[j][v->x]) == 0){
 				return 0; //TRUE
 			}
 		}
@@ -187,9 +189,9 @@ void print_parent(node *v){
 			continue;
 		} else if(v->parent[i].nodeType == 0){
 			//Lock
-			printf("lockid=%d  ", v->parent[i].x);
+			printf("lockid=%d  ", v->parent[i].y);
 		}else if(v->parent[i].nodeType == 1){
-			printf("pid=%d  ", v->parent[i].x);
+			printf("pid=%d  ", v->parent[i].y);
 		}
 	}
 	printf("\n");
