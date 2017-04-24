@@ -42,3 +42,5 @@ int translateIndex(int v);
 void deadlock_detect(void);
 int deadlock_helper(node *v);
 void print_parent(node *v);
+void print_parent2(node *v);
+

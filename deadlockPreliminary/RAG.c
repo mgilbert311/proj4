@@ -44,6 +44,8 @@ void rag_request(int pid, int lockid){
 	matrix[cell][lockid].req = "R";
 	matrix[cell][lockid].x = cell;
 	matrix[cell][lockid].y = lockid;
+	matrix[cell][lockid].nodeType = 1;
+
 
 }
 
@@ -53,14 +55,16 @@ void rag_alloc(int pid, int lockid){
 	//find the correct cell and update the matrix
 	int cell = translateIndex(pid);
 	matrix[lockid][cell].val =1;
+	matrix[lockid][cell].x = lockid;
+	matrix[lockid][cell].y = cell;
 	matrix[cell][lockid].val = 0;
+	matrix[cell][lockid].nodeType = 0;
 }
 
 
 
 void rag_dealloc(int pid, int lockid){
 	printf("in rag_dealloc\n");
-
 	//Find the correct cell and then set its value to 0
 	int cell = translateIndex(pid);
 	matrix[lockid][cell].val = 0;
@@ -134,18 +138,20 @@ void deadlock_detect(void){
 				if(deadlock_helper(&matrix[i][j]) == 0){
 					//True?
 					//printf("DEADLOCK with vertex[%d][%d]\n", i, j);
-					print_parent(&matrix[i][j]);
+					//print_parent2(&matrix[i][j]);
+					//Found one so break
+					break;
 				}
 			}
 		}
 	}
 //Free memory
-	for(i=0;i<SIZE;i++){
-		for(j=0; j<SIZE; j++){
-			free(matrix[i][j].parent);
-		}
+	// for(i=0;i<SIZE;i++){
+	// 	for(j=0; j<SIZE; j++){
+	// 		free(matrix[i][j].parent);
+	// 	}
 		
-	}
+	// }
 
 	//False?
 }
@@ -163,17 +169,27 @@ int deadlock_helper(node *v){
 			//And just check by row
 		if(matrix[j][v->y].val != 1){
 			continue;
+		}
+
+		if(matrix[j][v->y].color == WHITE){
+			matrix[j][v->y].parent[j] = *v; 
+			//Keep visiting
+			deadlock_helper(&matrix[j][v->y]);
+			// if(deadlock_helper(&matrix[j][v->y]) == 0){
+			// 	return 0; //TRUE
+			// }
 		}else if(matrix[j][v->y].color == GREY){
 			//Cycle occured
 			//printf("DEADLOCK with vertex[%d][%d]\n", i, v->y);
-			return 0; //TRUE
-		}else if(matrix[j][v->y].color == WHITE){
-			matrix[j][v->x].parent[j] = *v; 
+			//Deadlock happened
+			//Add last node and return because we have a deadlock
+			matrix[j][v->y].parent[j] = *v; 
+			printf("About to print\n");
+			print_parent2(&matrix[j][v->y]);
 
-			if(deadlock_helper(&matrix[j][v->x]) == 0){
-				return 0; //TRUE
-			}
+			return 0; //TRUE
 		}
+		
 		}
 	//}
 	v->color = BLACK;
@@ -183,17 +199,73 @@ int deadlock_helper(node *v){
 
 void print_parent(node *v){
 	int i;
-	printf("DEADLOCK");
-	for(i=0; i<SIZE; i++){
-		if(matrix[i][v->y].val != 1){
+	printf("DEADLOCK    ");
+	//go backwards
+	for(i=SIZE; i>0; i--){
+		//Go through the array and look for nodes that have a value of 1
+		if(matrix[i][v->y].val == 0){
 			continue;
-		} else if(v->parent[i].nodeType == 0){
+			// if(v->parent[i].val == 0){ //If empty cell
+		// //if(matrix[i][v->y].val != 1){
+		// 	continue;
+		// } 
+		}else if(v->parent[i].nodeType == 0){
 			//Lock
-			printf("lockid=%d  ", v->parent[i].y);
+			printf("lockid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
 		}else if(v->parent[i].nodeType == 1){
-			printf("pid=%d  ", v->parent[i].y);
+			//int index = translateIndex(v->parent[i].x);
+			//printf("pid=%d  ", v->parent[i].x);
+			//-10 for translate
+			printf("pid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
 		}
 	}
 	printf("\n");
+
+}
+
+void print_parent2(node *v){
+	int i;
+	printf("DEADLOCK   ");
+	//go backwards
+	// for(i =SIZE; i>0; i--){
+	// 	if(v->parent[i].val == 0){
+	// 		continue;
+	// 	}else if(v->parent[i].nodeType == 0){
+	// 		//Lock
+	// 		printf("lockid=%d  ", v->parent[i].x);
+	// 	}else if(v->parent[i].nodeType == 1){
+	// 		//int index = translateIndex(v->parent[i].x);
+	// 		//printf("pid=%d  ", v->parent[i].x);
+	// 		//-10 for translate
+	// 		printf("pid=%d  ", v->parent[i].x - 10);
+	// 	}
+	// }
+
+	for(i =SIZE; i>0; i--){
+		if(matrix[i][v->y].val == 0){
+			continue;
+		}else if(matrix[i][v->y].nodeType == 0){
+			printf("lockid=%d  ", matrix[i][v->y].x);
+		}else{
+			printf("pid=%d  ", matrix[i][v->y].x-10);
+		}
+	}
+	printf("\n");
+
+	// for(i=SIZE; i>0; i--){
+	// 	//Go through the array and look for nodes that have a value of 1
+	// 	if(v->parent[i].val == 0){ //If empty cell
+	// 	// //if(matrix[i][v->y].val != 1){
+	// 		continue;
+	// 	 } else if(v->parent[i].nodeType == 0){
+	// 		//Lock
+	// 		printf("lockid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
+	// 	}else if(v->parent[i].nodeType == 1){
+	// 		//int index = translateIndex(v->parent[i].x);
+	// 		//printf("pid=%d  ", v->parent[i].x);
+	// 		printf("pid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
+	// 	}
+	// }
+	// printf("\n");
 
 }
