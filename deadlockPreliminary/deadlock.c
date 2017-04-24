@@ -8,7 +8,6 @@
 #include "RAG.h"
 
 int main(int argc, char** argv){
-
     FILE *fp;
     char fileBuffer[50];
     char const t[2] = ","; //The delimiter
@@ -59,5 +58,6 @@ int main(int argc, char** argv){
     //Run the deadlock detection
 
     deadlock_detect();
+    //rag_print();
     return 0;
 }
