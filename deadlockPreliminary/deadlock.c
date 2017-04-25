@@ -13,40 +13,33 @@ int main(int argc, char** argv){
     char const t[2] = ","; //The delimiter
     int pid, lockid;
     char *token;
-    // if(argc != 2){
-    //     printf("Usage: ./deadlock < /path/to/input/file>\n");
-    //     exit(1);
-    // }
 
-    //TODO: Remove, just for testing
-    printf("Input file %s\n",argv[1]);
-    //init()
     //Open the file
     fp = fopen(argv[1], "rt");
     if(fp != NULL){
         while(fgets(fileBuffer, 10, fp) != NULL){
-            printf("grabbing the first thing\n");
             token = strtok(fileBuffer, t);
             pid = atoi(token);
             token = strtok(NULL, t);
-            if(strcmp(token,"R")){
-                //Must be an allocation 
+            if(strcmp(token,"R") == 0){
                 token = strtok(NULL, t);
                 lockid = atoi(token); 
                 rag_request(pid, lockid);
-            }else if(strcmp(token, "A")){
+            }else if(strcmp(token, "A")==0){
+                //Must be an allocation 
+
                 token = strtok(NULL, t);
                 lockid = atoi(token); 
                 rag_alloc(pid, lockid);
-            }else if(strcmp(token, "D")){
+            }else if(strcmp(token, "D")==0){
                 token = strtok(NULL, t);
                 lockid = atoi(token); 
+
                 rag_dealloc(pid, lockid);
             }else{
                 printf("That is not a valid code\n");
                 exit(1);
             }
-            //printf("Line: %s", fileBuffer);
         }
 
         fclose(fp);
@@ -56,8 +49,7 @@ int main(int argc, char** argv){
         exit(1);
     }
     //Run the deadlock detection
-
     deadlock_detect();
-    //rag_print();
+    rag_print();
     return 0;
 }

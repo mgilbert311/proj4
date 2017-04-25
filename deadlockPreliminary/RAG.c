@@ -6,30 +6,13 @@
 * Implemented using matrix representation of the graph
 */
 //Using a matrix so lookups/adds are O(1)
- //
-//extern **matrix;
-node matrix[SIZE][SIZE];
-//Parent array
-/*
-void init(){
-	
-	**matrix = malloc(SIZE * sizeof *matrix + (SIZE * (SIZE * sizeof **array)));
-	//int * const data = array + nrows;
-	for(i = 0; i < SIZE; i++)
-  		matrix[i] = data + i * ncolumns;
 
-	int i, j;
-	for(i=0; i<SIZE; i++){
-		//malloc the columns
-		matrix = (node*)malloc(sizeof(node));
-		for(j=0;j<SIZE; j++){
-			//Malloc the rows
-			matrix[i] = (node*)malloc(sizeof(node));
-		}
-	}
-}
-*/
 
+//The nodes are in order from l0-l9 and p0-p19
+int matrix[SIZE][SIZE];
+int parent[SIZE]; //Array for nodes involved, indices are important
+int color[SIZE]; //Array for which color a node is 
+int count = 0; //for backtracking
 
 /*
  * Adds a request edge from pid to lockid
@@ -37,43 +20,29 @@ void init(){
  * @param lockid
  */
 void rag_request(int pid, int lockid){
-	printf("In rag request\n");
 	//Find the correct cell and initialize
 	int cell = translateIndex(pid);
-	matrix[cell][lockid].val = 1;
-	matrix[cell][lockid].req = "R";
-	matrix[cell][lockid].x = cell;
-	matrix[cell][lockid].y = lockid;
-	matrix[cell][lockid].nodeType = 1;
-
-
+	matrix[cell][lockid] = 1;
 }
 
 
 void rag_alloc(int pid, int lockid){
-	printf("in alloc\n");
 	//find the correct cell and update the matrix
 	int cell = translateIndex(pid);
-	matrix[lockid][cell].val =1;
-	matrix[lockid][cell].x = lockid;
-	matrix[lockid][cell].y = cell;
-	matrix[cell][lockid].val = 0;
-	matrix[cell][lockid].nodeType = 0;
+	matrix[lockid][cell] = 1;
+	matrix[cell][lockid] = 0;
 }
 
 
-
 void rag_dealloc(int pid, int lockid){
-	printf("in rag_dealloc\n");
 	//Find the correct cell and then set its value to 0
 	int cell = translateIndex(pid);
-	matrix[lockid][cell].val = 0;
+	matrix[lockid][cell] = 0;
 }
 
 
 //Print the matrix
 void rag_print(){
-	 printf("in print\n");
 	int i, j;
 	for(i=0; i<SIZE;i++){
 		if(i <10) printf("l%d", i);
@@ -84,26 +53,12 @@ void rag_print(){
 		if(i<10) printf("l%d   ", i);
 		else printf("p%d   ", i-10);
 		for(j=0; j<SIZE; j++){
-			printf("%d", matrix[i][j].val);
+			printf("%d", matrix[i][j]);
 		}
 		printf("\n"); //New line after each row
 	}
 
 }
-
-//Clear up memory
-/*
-void freeMatrix(){
-	int i, j;
-	for(i=0; i<SIZE; i++){
-		//malloc the columns
-		for(j=0;j<SIZE; j++){
-			//Malloc the rows
-			free(matrix[i][j]);
-		}
-	}
-}
-*/
 
 /**
  * Translate only for a thread node
@@ -120,152 +75,67 @@ int translateIndex(int v){
 void deadlock_detect(void){
 	//printf("In detect\n");
 	//node parent[SIZE]; //Can max visit all nodes?
-	int i, j;
+	int i;
 	//Initialize all to be unvisited
 	for(i=0; i<SIZE; i++){
-		for(j=0; j<SIZE; j++){
-			matrix[i][j].color = WHITE;
-			//parent[matrix[i][j]];
-			matrix[i][j].parent = (node*)malloc(sizeof(node)*SIZE); //Initialize all parent arrays to be null
+			color[i] = WHITE;
+			parent[i] = -1; //-1 as NULL
 		}
-	}
-//As soon as you see a duplicate node, you are done and can print out
+	
 	for(i=0; i<SIZE; i++){
-		for(j=0; j<SIZE; j++){
-			if(matrix[i][j].val == 0){
-				continue; //optimization so it doesn't visit unnecessary places
-			}else if(matrix[i][j].color == WHITE){ //If unvisited
-				if(deadlock_helper(&matrix[i][j]) == 0){
-					//True?
-					//printf("DEADLOCK with vertex[%d][%d]\n", i, j);
-					//print_parent2(&matrix[i][j]);
-					//Found one so break
-					break;
-				}
-			}
+		if(color[i] == WHITE){
+			//Visit an unseen node
+			deadlock_helper(i);
+			}		
 		}
-	}
-//Free memory
-	// for(i=0;i<SIZE;i++){
-	// 	for(j=0; j<SIZE; j++){
-	// 		free(matrix[i][j].parent);
-	// 	}
-		
-	// }
-
-	//False?
+	//Found nothing
 }
 
 //DFS helper
-int deadlock_helper(node *v){
-	   //printf("In helper\n");
-
+int deadlock_helper(int index){
 	int j;
-	v->color = GREY;
-	//Iterate over 
-	//for(i=v->x; i<SIZE; i++){
+	color[index] = GREY; //This is the node we just visited
+
 		for(j=0; j<SIZE; j++){
 		//Don't worry about non existant edges
-			//And just check by row
-		if(matrix[j][v->y].val != 1){
-			continue;
+		if(matrix[index][j] == 1){
+			//In the an adjacent node
+			if(color[j] == WHITE){
+				parent[j] = index;//Add where the node came from
+				deadlock_helper(j); //Recurse
+			}else if(color[j] == GREY){
+				//Found a cycle/deadlock stop
+				parent[j] = index; //Add the last node to the parent
+				print_parent(j);
+
+			}
 		}
 
-		if(matrix[j][v->y].color == WHITE){
-			matrix[j][v->y].parent[j] = *v; 
-			//Keep visiting
-			deadlock_helper(&matrix[j][v->y]);
-			// if(deadlock_helper(&matrix[j][v->y]) == 0){
-			// 	return 0; //TRUE
-			// }
-		}else if(matrix[j][v->y].color == GREY){
-			//Cycle occured
-			//printf("DEADLOCK with vertex[%d][%d]\n", i, v->y);
-			//Deadlock happened
-			//Add last node and return because we have a deadlock
-			matrix[j][v->y].parent[j] = *v; 
-			printf("About to print\n");
-			print_parent2(&matrix[j][v->y]);
-
-			return 0; //TRUE
 		}
-		
-		}
-	//}
-	v->color = BLACK;
-	return 1; //FALSE
-
+	color[index] = BLACK;
+	return 1; //Did not find anything
 }
 
-void print_parent(node *v){
-	int i;
+void print_parent(int index){
+	int i; //If count ==1 then we can stop
 	printf("DEADLOCK    ");
-	//go backwards
-	for(i=SIZE; i>0; i--){
-		//Go through the array and look for nodes that have a value of 1
-		if(matrix[i][v->y].val == 0){
-			continue;
-			// if(v->parent[i].val == 0){ //If empty cell
-		// //if(matrix[i][v->y].val != 1){
-		// 	continue;
-		// } 
-		}else if(v->parent[i].nodeType == 0){
-			//Lock
-			printf("lockid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
-		}else if(v->parent[i].nodeType == 1){
-			//int index = translateIndex(v->parent[i].x);
-			//printf("pid=%d  ", v->parent[i].x);
-			//-10 for translate
-			printf("pid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
-		}
-	}
-	printf("\n");
+	i = index; //original index
 
-}
-
-void print_parent2(node *v){
-	int i;
-	printf("DEADLOCK   ");
-	//go backwards
-	// for(i =SIZE; i>0; i--){
-	// 	if(v->parent[i].val == 0){
-	// 		continue;
-	// 	}else if(v->parent[i].nodeType == 0){
-	// 		//Lock
-	// 		printf("lockid=%d  ", v->parent[i].x);
-	// 	}else if(v->parent[i].nodeType == 1){
-	// 		//int index = translateIndex(v->parent[i].x);
-	// 		//printf("pid=%d  ", v->parent[i].x);
-	// 		//-10 for translate
-	// 		printf("pid=%d  ", v->parent[i].x - 10);
-	// 	}
-	// }
-
-	for(i =SIZE; i>0; i--){
-		if(matrix[i][v->y].val == 0){
-			continue;
-		}else if(matrix[i][v->y].nodeType == 0){
-			printf("lockid=%d  ", matrix[i][v->y].x);
+	while(count < 1){ //Seen it twice
+		//Get the first parent
+		i = parent[i];
+		//Print out the associated handle
+		if(i < 10){ //print out a lockid
+			printf("lockid=%d     ", i);
 		}else{
-			printf("pid=%d  ", matrix[i][v->y].x-10);
+			printf("pid=%d     ", i-10);
 		}
+
+		if(i == index){
+			count++; //Break out if we have seen ourselves again
+		} 
 	}
 	printf("\n");
 
-	// for(i=SIZE; i>0; i--){
-	// 	//Go through the array and look for nodes that have a value of 1
-	// 	if(v->parent[i].val == 0){ //If empty cell
-	// 	// //if(matrix[i][v->y].val != 1){
-	// 		continue;
-	// 	 } else if(v->parent[i].nodeType == 0){
-	// 		//Lock
-	// 		printf("lockid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
-	// 	}else if(v->parent[i].nodeType == 1){
-	// 		//int index = translateIndex(v->parent[i].x);
-	// 		//printf("pid=%d  ", v->parent[i].x);
-	// 		printf("pid=%d  ", matrix[v->parent[i].x][v->parent[i].y].x);
-	// 	}
-	// }
-	// printf("\n");
 
 }
